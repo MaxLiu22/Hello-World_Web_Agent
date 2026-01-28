@@ -62,3 +62,19 @@
 - [ ] 支持文件上传并从宿主机挂载至容器。
 - [ ] 接入 Qwen-VL 实现基于视觉的坐标点击优化（解决复杂 DOM 定位问题）。
 - [ ] 多会话隔离与浏览器容器动态调度。
+
+---
+
+### （可选）第四天：browser-use 内核重构与分支实验
+**目标**：在保留现有 Playwright 手写 Agent 的前提下，引入 browser-use 作为新的 Web Agent 内核，并为未来接入 Qwen-VL 做准备。  
+* **建议分支策略**：
+    * 在当前基础上创建一个长期保留分支（例如 `playwright-baseline`），完整保存 Day 1–3 的实现。
+    * 在主分支上开始 browser-use 版本的重构与实验，必要时可随时对比或回滚。
+* **核心任务（browser-use 路线）**：
+    * [ ] 新增 `browser_use_agent.py`，用 Kimi + browser-use 跑通“打开百度”的最小 Demo（先在本机验证）。
+    * [ ] 在 FastAPI 中为 browser-use 版本新增独立的 `/run_browser_use` 接口，便于与现有 `/run` 对比。
+    * [ ] 将 browser-use Agent 挂载到 Docker + VNC 链路中，在 noVNC 画面中观察其自动操作过程。
+    * [ ] 设计并实现一个“视觉点击”工具，将 Qwen-VL 接入 browser-use 的 tool 体系，用截图 + 坐标方式完成复杂点击。
+* **验证点**：
+    * [ ] 同一套 UI 下，可以分别触发 Playwright-baseline 与 browser-use 版本，对比行为差异。
+    * [ ] 在复杂页面结构下，browser-use + Qwen-VL 能成功完成传统 DOM 选择困难的点击与操作。
