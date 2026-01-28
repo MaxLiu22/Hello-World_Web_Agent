@@ -7,6 +7,7 @@
 """
 
 import os
+import sys
 
 from dotenv import load_dotenv
 from langchain_openai import ChatOpenAI
@@ -91,7 +92,11 @@ def execute_plan(plan: list[str]) -> None:
 
     print("\n🌐 [Playwright] 准备打开一个真实浏览器页面（百度首页示例）...")
     with sync_playwright() as p:
-        browser = p.chromium.launch(headless=False)  # headless=False 方便你看到窗口
+        # 在本机开发时用有头模式；在 Docker 等无显示环境中可以通过环境变量切到 headless 模式
+        headless_env = os.getenv("PLAYWRIGHT_HEADLESS", "false").lower()
+        headless = headless_env in ("1", "true", "yes")
+
+        browser = p.chromium.launch(headless=headless)  # 本地默认 False，容器中可设为 True
         page = browser.new_page()
         page.goto("https://www.baidu.com", wait_until="load")
         print("✅ 浏览器已打开百度首页，你可以看到一个新窗口弹出。")
@@ -99,6 +104,9 @@ def execute_plan(plan: list[str]) -> None:
         # 这里做一件非常具体的事：在搜索框输入“深圳 未来14天天气”并回车
         try:
             print("⌨️ [Playwright] 正在自动输入搜索内容并回车：深圳 未来14天天气")
+
+            # 等待页面上的搜索输入框真正可用（容器内网络/渲染可能更慢）
+            page.wait_for_timeout(2000)
 
             # 你提供的 DOM 里，真正可编辑的是 id="chat-textarea" 的 textarea
             # 我们优先直接用这个元素；如果找不到，再回退到传统搜索框。
@@ -113,13 +121,18 @@ def execute_plan(plan: list[str]) -> None:
                 search_box = page.locator('input[name="wd"]')
 
             search_box.click()
-            search_box.fill("深圳 未来14天天气")
+            # 用 type 而不是 fill，更接近“真实键盘输入”，也便于你肉眼观察
+            page.keyboard.type("深圳 未来14天天气")
             page.keyboard.press("Enter")
         except Exception as e:
             print(f"⚠️ 自动搜索过程中出现异常：{e}")
 
-        # 为了让你有时间看到页面，不要立刻关闭浏览器
-        input("按下回车键后关闭浏览器并结束脚本...")
+        # 本地开发时允许用户按回车后再关闭浏览器；
+        # 在 Docker 等非交互环境中，直接关闭浏览器避免 EOFError。
+        if sys.stdin.isatty():
+            input("按下回车键后关闭浏览器并结束脚本...")
+        else:
+            print("⌛ 非交互环境（例如 Docker），自动关闭浏览器并结束脚本。")
         browser.close()
 
 

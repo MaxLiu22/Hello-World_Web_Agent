@@ -1,0 +1,15 @@
+version: "3.9"
+
+services:
+  web-agent-browser:
+    image: mini-manus-day2
+    build:
+      context: .
+      dockerfile: Dockerfile
+    env_file:
+      - .env
+    ports:
+      - "6080:6080"  # noVNC web 界面
+      - "8000:8000"  # FastAPI API（容器内 uvicorn）
+    # 为了方便调试，先保持前台运行，必要时可以加 restart 策略
+

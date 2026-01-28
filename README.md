@@ -26,12 +26,17 @@
 ### 第二天：容器化与画面流 (Docker + VNC)
 **目标**：将浏览器“云端化”，通过网页实时查看画面。
 * **核心任务**：
-    * [ ] 编写 `Dockerfile`，集成 Playwright 运行环境及 VNC 服务。
-    * [ ] 配置 `docker-compose.yml`，映射 6080 端口（noVNC）到宿主机。
-    * [ ] 修改 Agent 代码，使其在 Docker 虚拟显示器（DISPLAY=:99）中运行。
+    * [x] 编写 `Dockerfile`，集成 Playwright 运行环境及 VNC 服务（Xvfb + x11vnc + noVNC）。
+    * [x] 配置 `docker-compose.yml`，映射 6080 端口（noVNC）到宿主机。
+    * [x] 修改 Agent 代码，使其在 Docker 虚拟显示器（DISPLAY=:99）中运行，并兼容非交互环境。
 * **验证点**：
-    * 在宿主机浏览器访问 `localhost:6080` 能看到容器内的桌面。
-    * 运行脚本后，noVNC 窗口内能实时看到 Agent 的操作过程。
+    * [x] 在宿主机浏览器访问 `http://localhost:6080/vnc.html` 能看到容器内的桌面。
+    * [x] 运行 `docker-compose up --build` 后，noVNC 窗口内能实时看到 Agent 在百度中自动搜索“深圳未来14天天气”。
+
+> **Day 2 快速体验：**
+> 1. 在项目根目录执行：`docker-compose up --build`
+> 2. 打开浏览器访问：`http://localhost:6080/vnc.html`
+> 3. 点击 Connect 后，等待几秒即可看到浏览器自动打开并搜索“深圳未来14天天气”。
 
 ### 第三天：前端集成与“Manus”初体验
 **目标**：完成双窗交互 UI，打造完整的 Web Agent 产品体验。
