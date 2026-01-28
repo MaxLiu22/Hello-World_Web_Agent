@@ -13,6 +13,8 @@ from dotenv import load_dotenv
 from langchain_openai import ChatOpenAI
 from playwright.sync_api import sync_playwright
 
+from visual_tool import visual_inspect
+
 
 def get_user_instruction() -> str:
     """模拟从用户那里接收一个自然语言指令。"""
@@ -128,6 +130,14 @@ def execute_plan(plan: list[str]) -> None:
             page.wait_for_timeout(2000)
 
             print("📄 [Playwright] 尝试提取结果页文本用于天气总结...")
+            # 阶段一：调用视觉工具占位实现（截图 + 占位回答），先打通调用路径
+            visual_answer = visual_inspect(
+                page,
+                "请粗略描述当前搜索结果页面的布局结构（这是占位实现，未来会用 Qwen-VL 回答）。",
+            )
+            print("👁️ [visual_inspect 占位回答]:")
+            print(visual_answer)
+
             try:
                 # 简单策略：抓取 body 文本，并截断到一定长度，避免 prompt 过长
                 raw_text = page.inner_text("body")

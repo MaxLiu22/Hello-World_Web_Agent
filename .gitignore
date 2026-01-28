@@ -12,6 +12,9 @@ venv/
 .env
 .env.*
 
+# Generated screenshots
+screenshots/
+
 # IDE / Editor
 .vscode/
 .idea/
