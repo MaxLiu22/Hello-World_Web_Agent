@@ -110,8 +110,6 @@ def execute_plan(plan: list[str]) -> None:
 
             # 你提供的 DOM 里，真正可编辑的是 id="chat-textarea" 的 textarea
             # 我们优先直接用这个元素；如果找不到，再回退到传统搜索框。
-            search_box = None
-
             chat_textarea = page.locator("#chat-textarea")
             if chat_textarea.count() > 0:
                 print("🔍 使用 #chat-textarea 作为搜索输入。")
@@ -124,8 +122,41 @@ def execute_plan(plan: list[str]) -> None:
             # 用 type 而不是 fill，更接近“真实键盘输入”，也便于你肉眼观察
             page.keyboard.type("深圳 未来14天天气")
             page.keyboard.press("Enter")
+
+            # 等待搜索结果页面加载稳定
+            page.wait_for_load_state("networkidle")
+            page.wait_for_timeout(2000)
+
+            print("📄 [Playwright] 尝试提取结果页文本用于天气总结...")
+            try:
+                # 简单策略：抓取 body 文本，并截断到一定长度，避免 prompt 过长
+                raw_text = page.inner_text("body")
+            except Exception:
+                raw_text = ""
+
+            if raw_text:
+                snippet = raw_text[:4000]  # 简单截断，防止上下文过大
+                print("📄 [Playwright] 已获取结果页文本片段，调用 Kimi 进行总结...")
+
+                llm = _load_kimi_client()
+                summary_prompt = (
+                    "下面是一段网页上关于深圳未来天气的信息文本（可能包含额外内容）。\n"
+                    "请你基于其中与“深圳未来14天天气”相关的部分，做一个简洁的总结：\n"
+                    "1. 用中文回答。\n"
+                    "2. 列出未来14天中适合户外活动的日期，并说明原因（例如晴天、温度适宜等）。\n"
+                    "3. 如果无法严格得到14天的逐日信息，可以基于可用信息做合理的概括。\n\n"
+                    f"网页文本片段如下：\n{snippet}\n"
+                )
+                summary_resp = llm.invoke(summary_prompt)
+                summary_text = getattr(summary_resp, "content", str(summary_resp))
+
+                print("\n📝 [Kimi 总结的深圳未来14天天气报告]:")
+                print(summary_text)
+            else:
+                print("⚠️ 未能从结果页提取到文本，跳过天气总结。")
+
         except Exception as e:
-            print(f"⚠️ 自动搜索过程中出现异常：{e}")
+            print(f"⚠️ 自动搜索或提取结果过程中出现异常：{e}")
 
         # 本地开发时允许用户按回车后再关闭浏览器；
         # 在 Docker 等非交互环境中，直接关闭浏览器避免 EOFError。
